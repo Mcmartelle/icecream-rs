@@ -1,6 +1,18 @@
 extern crate backtrace;
 
+#[cfg(not(debug_assertions))]
+#[macro_export]
+macro_rules! ic {
+    ($($args:tt)*) => {};
+}
 
+#[cfg(not(debug_assertions))]
+#[macro_export]
+macro_rules! ice {
+    ($($args:tt)*) => {};
+}
+
+#[cfg(debug_assertions)]
 #[macro_export]
 macro_rules! ic {
     () => {{
@@ -16,12 +28,15 @@ macro_rules! ic {
 
     ($annotation:expr, $x:expr) => {{
         let (line, file, formatter) = (line!(), file!(), $crate::PRINTER.read().unwrap());
-        eprintln!("{}", formatter.ic_annotated($annotation, &$x, stringify!($x), line, file));
+        eprintln!(
+            "{}",
+            formatter.ic_annotated($annotation, &$x, stringify!($x), line, file)
+        );
         $x
     }};
 }
 
-
+#[cfg(debug_assertions)]
 #[macro_export]
 macro_rules! ice {
     // Wrap the result in a block so the expanded code can be matched as an $expr in the testing macro.
@@ -44,7 +59,10 @@ macro_rules! ice {
         let backtrace = $crate::Backtrace::new();
         let parsed = $crate::parsed_backtrace::ParsedBacktrace::new(&backtrace);
         let formatter = &$crate::PRINTER.read().unwrap();
-        eprintln!("{}", formatter.ice_annotated($annotation, &$x, stringify!($x), parsed));
+        eprintln!(
+            "{}",
+            formatter.ice_annotated($annotation, &$x, stringify!($x), parsed)
+        );
         $x
     }};
 }
